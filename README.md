@@ -6,6 +6,22 @@
 
 A lightweight macOS menu bar monitor for remote servers over SSH.
 
+## 界面预览
+
+以下为应用的实际截图，均使用内置演示数据；服务器名称、用户和指标为模拟内容，不包含真实 SSH 配置。
+
+**多服务器总览** — 集中查看每张卡的利用率、温度、显存和使用者，绿色为空闲，橙色为占用。
+
+![ServerBar 多服务器总览：两台八卡昇腾与一台 NVIDIA 服务器](docs/images/overview.jpg)
+
+**服务器详情** — 点击服务器后，展开该机的设备卡片与 CPU、内存、网络、磁盘面板。
+
+![ServerBar 服务器详情与资源面板](docs/images/server-detail.jpg)
+
+**状态栏弹窗** — 无需打开主窗口即可查看逐卡信息；收起服务器后仍保留资源摘要。
+
+<img src="docs/images/menu-bar.jpg" alt="ServerBar 状态栏弹窗，展示逐卡利用率、显存、温度与使用者" width="560">
+
 ## 下载
 
 从 [GitHub Releases](https://github.com/toubeichuan/serverbar/releases/latest) 下载 DMG 安装包，打开后将 ServerBar 拖到 Applications。
