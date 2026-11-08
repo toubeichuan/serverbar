@@ -26,7 +26,7 @@ A lightweight macOS menu bar monitor for remote servers over SSH.
 
 从 [GitHub Releases](https://github.com/toubeichuan/serverbar/releases/latest) 下载 DMG 安装包，打开后将 ServerBar 拖到 Applications。
 
-当前安装包适用于 Apple Silicon（M 系列）Mac，要求 macOS 13 或更新版本。仓库为私有，需要使用有访问权限的 GitHub 账号登录才能下载。安装包为本地 ad-hoc 签名，尚未经过 Apple Developer ID 签名或公证，macOS 首次打开时可能阻止运行。
+当前安装包适用于 Apple Silicon（M 系列）Mac，要求 macOS 13 或更新版本。仓库与安装包均已公开，无需登录即可下载。安装包为本地 ad-hoc 签名，尚未经过 Apple Developer ID 签名或公证，macOS 首次打开时可能阻止运行。
 
 ## 使用
 
