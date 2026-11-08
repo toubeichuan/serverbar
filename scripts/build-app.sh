@@ -1,11 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-swift build -c release
+swift build -c release \
+  -Xswiftc -debug-prefix-map -Xswiftc "$PWD=." \
+  -Xswiftc -file-prefix-map -Xswiftc "$PWD=."
 BIN_DIR="$(swift build -c release --show-bin-path)"
 APP="$PWD/dist/ServerBar.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/ServerBar" "$APP/Contents/MacOS/ServerBar"
+# Drop debugger symbol records containing local object/module paths before signing.
+xcrun strip -S "$APP/Contents/MacOS/ServerBar"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
