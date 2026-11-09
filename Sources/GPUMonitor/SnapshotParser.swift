@@ -3,17 +3,18 @@ import Foundation
 enum SnapshotParser {
     static func parse(_ raw: String) throws -> Snapshot {
         var sections: [String: [String]] = [:], current = ""
-        var procOK = Set<Int>(), appsOK = false, psOK = false
+        var procOK = Set<Int>(), appsOK = false, psOK = false, graphicsOK = false
         let systemMarkers = ["__GM_UPTIME__", "__GM_CPU__", "__GM_CPU_MODEL__", "__GM_MEMORY__", "__GM_LOAD__", "__GM_NETWORK__", "__GM_ROUTE__", "__GM_DISK__", "__GM_DISK_IO__", "__GM_DISK_SIZE__", "__GM_PROGRAMS__", "__GM_GPU_ERROR__"]
         for line in raw.components(separatedBy: .newlines) {
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed == "__GM_APPS_OK__" { appsOK = true; current = "" }
+            else if trimmed == "__GM_GRAPHICS_OK__" { graphicsOK = true; current = "" }
             else if trimmed == "__GM_PS_OK__" { psOK = true; current = "" }
             else if trimmed.hasPrefix("__GM_NPU_PROC_OK__ ") {
                 if let id = Int(trimmed.split(separator: " ").last ?? "") { procOK.insert(id) }; current = ""
             } else if trimmed.hasPrefix("__GM_NPU_PROC__ ") {
                 current = "PROC-" + String(trimmed.split(separator: " ").last ?? "")
-            } else if (["__GM_GPU__", "__GM_NPU__", "__GM_APPS__", "__GM_PS__"] + systemMarkers).contains(trimmed) { current = trimmed }
+            } else if (["__GM_GPU__", "__GM_NPU__", "__GM_APPS__", "__GM_GRAPHICS__", "__GM_PS__"] + systemMarkers).contains(trimmed) { current = trimmed }
             else if !current.isEmpty { sections[current, default: []].append(line) }
         }
         var owners: [Int: (String, String)] = [:]
@@ -41,6 +42,21 @@ enum SnapshotParser {
                 devices[i].processes.append(ComputeProcess(pid: pid, user: owners[pid]?.0, name: c[2], memoryMiB: number(c[3])))
             }
             if malformed { for i in devices.indices { devices[i].processesKnown = false } }
+            if graphicsOK {
+                // pmon's G means graphics only. Do not exempt C+G, MPS, games,
+                // browsers or arbitrary processes just because they use little memory.
+                let desktopNames: Set<String> = ["Xorg", "Xwayland", "gnome-shell", "kwin_wayland", "kwin_x11", "plasmashell"]
+                for line in sections["__GM_GRAPHICS__", default: []] {
+                    let cells = line.split(whereSeparator: \.isWhitespace).map(String.init)
+                    guard cells.count >= 5, let gpu = Int(cells[0]), let pid = Int(cells[1]), pid > 0,
+                          cells[2] == "G", let memory = number(cells[3]),
+                          let name = cells.last, desktopNames.contains(name),
+                          let i = devices.firstIndex(where: { $0.index == gpu }),
+                          !devices[i].processes.contains(where: { $0.pid == pid }),
+                          !devices[i].desktopProcesses.contains(where: { $0.pid == pid }) else { continue }
+                    devices[i].desktopProcesses.append(ComputeProcess(pid: pid, user: owners[pid]?.0, name: name, memoryMiB: memory))
+                }
+            }
         } else if let lines = sections["__GM_NPU__"] {
             do { devices = try ascendDevices(lines) }
             catch { if telemetry != nil { gpuError = error.localizedDescription } else { throw error } }

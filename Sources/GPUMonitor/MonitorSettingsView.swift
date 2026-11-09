@@ -44,6 +44,7 @@ struct MonitorSettingsView: View {
                     Label("空闲：没有计算进程，计算负载及设备内存占用低。", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
                     Label("占用：正在计算，或进程 / 设备内存仍有占用。", systemImage: "circle.inset.filled").foregroundStyle(.orange)
                     Label("未知 / 过期：信息不足或连接异常，不计入空闲。", systemImage: "questionmark.circle").foregroundStyle(.secondary)
+                    Text("NVIDIA 空闲判定排除已识别的纯图形桌面进程（Xorg、Xwayland、GNOME / KDE）的实测显存，界面仍显示总显存。计算进程、其他程序及无法识别的显存不会被忽略；桌面进程采集失败时不扣除。").font(.caption).foregroundStyle(.secondary)
                     Text("910B 的约 3.3 GiB 常驻 HBM 不直接算作任务占用：无进程、AI Core <5%、健康正常且 HBM ≤ min(4 GiB, 总量的 6%) 才显示空闲。该容差为启发式，HBM 数值仍显示实测总占用。").font(.caption).foregroundStyle(.secondary)
                     Text("空闲是监测结果，不代表已经预留。昇腾 Chip 表示设备内部芯片编号，仅在详情中显示。").font(.caption).foregroundStyle(.secondary)
                 }

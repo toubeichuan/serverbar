@@ -25,6 +25,9 @@ struct DeviceDetail: View {
                     Label("此数据已过期。", systemImage: "exclamationmark.triangle").foregroundStyle(MonitorTheme.amber)
                 }
                 Text(device.occupancyReason).font(.caption).foregroundStyle(.secondary)
+                if device.desktopMemoryMiB > 0 {
+                    Text("桌面图形进程：\(device.desktopProcesses.map(\.name).joined(separator: ", "))，合计 \(memoryText(device.desktopMemoryMiB))。下方仍显示真实总显存；空闲判定仅排除这部分已识别的桌面开销。").font(.caption).foregroundStyle(.secondary)
+                }
                 if device.usesAscendMemoryTolerance {
                     Text("HBM 保留驱动报告的总占用；空闲判定容差 \(memoryText(device.idleMemoryLimitMiB))，不是精确测得的系统预留量。有计算进程时始终视为占用。").font(.caption).foregroundStyle(.secondary)
                 }

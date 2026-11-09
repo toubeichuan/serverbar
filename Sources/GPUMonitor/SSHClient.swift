@@ -133,6 +133,8 @@ enum SSHClient {
           printf '%s\n' "$GM_APPS"
           if [ "$GM_APP_STATUS" -eq 0 ]; then echo __GM_APPS_OK__; fi
           GM_PIDS=$(printf '%s\n' "$GM_APPS" | awk -F, '{gsub(/ /,"",$2); if ($2 ~ /^[0-9]+$/) print $2}')
+          echo __GM_GRAPHICS__
+          if nvidia-smi pmon -c 1 -s m 2>/dev/null; then echo __GM_GRAPHICS_OK__; fi
         else
           echo __GM_NPU__
           GM_NPU=$(npu-smi info) || exit 4

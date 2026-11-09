@@ -58,6 +58,16 @@ struct Accelerator: Identifiable, Equatable {
     var powerWatts: Double? = nil
     var processes: [ComputeProcess] = []
     var processesKnown = false
+    var desktopProcesses: [ComputeProcess] = []
+    var desktopMemoryMiB: Double {
+        guard kind == .nvidia else { return 0 }
+        return desktopProcesses.compactMap(\.memoryMiB).reduce(0, +)
+    }
+    // Keep displayed memory untouched. Only identified graphics-only desktop contexts
+    // are excluded from the availability heuristic, never CUDA or unknown programs.
+    var occupancyMemoryMiB: Double? {
+        memoryUsedMiB.map { max(0, $0 - desktopMemoryMiB) }
+    }
     var label: String { "\(kind == .ascend ? "NPU" : "GPU") \(index)" + (chip.map { " · Chip \($0)" } ?? "") }
     var compactLabel: String { "\(kind == .ascend ? "NPU" : "GPU") \(index)" + ((chip ?? 0) > 0 ? ".\(chip!)" : "") }
     var shortName: String { name.replacingOccurrences(of: "NVIDIA GeForce ", with: "").replacingOccurrences(of: "NVIDIA ", with: "") }
@@ -69,6 +79,7 @@ struct Accelerator: Identifiable, Equatable {
         if !processes.isEmpty { return "进程仍在占用，当前计算负载低" }
         if state == .occupied { return "设备内存仍有占用" }
         if state == .idle {
+            if desktopMemoryMiB > 0 { return "未发现计算进程，负载低；已识别的桌面图形显存不计为计算任务占用" }
             return usesAscendMemoryTolerance ? "未发现计算进程，AI Core 低于 5%；HBM 在 910B 常驻内存容差内" : "未发现计算进程，负载与内存占用低"
         }
         return "数据不足或设备健康异常，无法确认空闲"
@@ -90,7 +101,7 @@ struct Accelerator: Identifiable, Equatable {
     }
     var idleCandidate: Bool {
         guard processesKnown, processes.isEmpty, let utilization, utilization < 5,
-              let used = memoryUsedMiB, let total = memoryTotalMiB, total > 0,
+              let used = occupancyMemoryMiB, let total = memoryTotalMiB, total > 0,
               (kind == .ascend ? health?.uppercased() == "OK" : health == nil || health?.uppercased() == "OK") else { return false }
         return used <= idleMemoryLimitMiB
     }
@@ -98,7 +109,7 @@ struct Accelerator: Identifiable, Equatable {
         if let health, health.uppercased() != "OK" { return .unknown }
         if let utilization, utilization >= 5 { return .busy }
         if !processes.isEmpty { return .occupied }
-        if let used = memoryUsedMiB, let total = memoryTotalMiB, total > 0, used > idleMemoryLimitMiB { return .occupied }
+        if let used = occupancyMemoryMiB, let total = memoryTotalMiB, total > 0, used > idleMemoryLimitMiB { return .occupied }
         if idleCandidate { return .idle }
         return .unknown
     }
